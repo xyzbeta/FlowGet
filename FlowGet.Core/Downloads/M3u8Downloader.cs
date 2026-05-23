@@ -1,0 +1,136 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using FlowGet.Abstractions.Common;
+using FlowGet.Abstractions.Downloader;
+using FlowGet.Abstractions.M3u8;
+using FlowGet.Abstractions.M3uDownloaders;
+using FlowGet.Abstractions.Models;
+using FlowGet.Abstractions.Settings;
+using FlowGet.Combiners;
+using FlowGet.Common.Extensions;
+using FlowGet.Common.M3u8Infos;
+using FlowGet.Common.Models;
+using FlowGet.Common.Utils;
+using FlowGet.Downloader;
+using FlowGet.M3U8;
+using FlowGet.M3U8.Extensions;
+
+namespace FlowGet.Core.Downloads
+{
+    public partial class M3u8Downloader(IDownloadContext context,bool skipParse) : IDownloader
+    {
+        private M3u8FileInfoClient m3U8FileInfoClient = default!;
+        private DownloaderClient m3UDownloaderClient = default!;
+        private M3uCombinerClient m3UCombinerClient = default!;
+        private IM3uFileInfo M3U8FileInfo = default!;
+        private IM3uKeyInfo? M3UKeyInfo;
+
+        private bool _isParsed = skipParse;
+        private bool _isDownloaded = false;
+
+        public async ValueTask StartDownload(Action<int> StateAction,IDialogProgress dialogProgress, CancellationToken cancellationToken)
+        {
+            StateAction.Invoke((int)DownloadStatus.Parsed);
+            await GetM3U8FileInfo(cancellationToken);
+
+            using var acquire = dialogProgress.Acquire();
+            await DownloadAsync(dialogProgress, cancellationToken);
+
+            await MergeAsync(dialogProgress, cancellationToken);
+
+            IMergeSetting mergeSetting = (IMergeSetting)context.DownloaderSetting;
+            if (mergeSetting.IsCleanUp)
+                DirectoryEx.DeleteCache(context.DownloadParam.CachePath);
+        }
+
+        private async ValueTask GetM3U8FileInfo(CancellationToken cancellationToken)
+        {
+            if (_isParsed)
+                return;
+
+            IM3u8DownloadParam m3u8DownloadParam = (IM3u8DownloadParam)context.DownloadParam;
+            if (m3u8DownloadParam.RequestUrl.IsFile)
+                M3U8FileInfo = m3U8FileInfoClient.M3u8FileReader.GetM3u8FileInfo(m3u8DownloadParam.RequestUrl);
+            else
+                M3U8FileInfo = await m3U8FileInfoClient.M3UFileReadManager.GetM3u8FileInfo(cancellationToken);
+
+            if (M3U8FileInfo.IsEmpty)
+                throw new InvalidDataException("没有包含任何数据");
+
+            context.Log.Info("获取视频流{0}个", M3U8FileInfo.MediaFiles.Count);
+            if (M3UKeyInfo is not null)
+            {
+                M3UFileInfo m3UFileInfo = (M3UFileInfo)M3U8FileInfo;
+                m3UFileInfo.Key = m3u8DownloadParam.M3UKeyInfo!;
+            }
+
+            _isParsed = true;
+        }
+
+
+        private async ValueTask DownloadAsync(IDialogProgress downloadProgress, CancellationToken cancellationToken)
+        {
+            if (_isDownloaded)
+                return;
+
+            m3UDownloaderClient.M3UFileInfo = M3U8FileInfo;
+            m3UDownloaderClient.DialogProgress = downloadProgress;
+
+            await m3UDownloaderClient.M3u8Downloader.Initialization(cancellationToken);
+            await m3UDownloaderClient.M3u8Downloader.StartDownload(M3U8FileInfo, cancellationToken);
+            _isDownloaded = true;
+        }
+
+        private async ValueTask MergeAsync(IDialogProgress progress, CancellationToken cancellationToken)
+        {
+            if (M3U8FileInfo.Map is not null)
+            {
+                m3UCombinerClient.M3u8FileMerger.Initialize(M3U8FileInfo);
+                await m3UCombinerClient.M3u8FileMerger.StartMerging(M3U8FileInfo, progress, cancellationToken);
+            }
+            else
+                await m3UCombinerClient.FFmpeg.ConvertToMp4(M3U8FileInfo, progress, cancellationToken);
+        }
+    }
+
+
+    public partial class M3u8Downloader
+    {
+        //通过软件界面创建
+        public static M3u8Downloader CreateM3u8Downloader(IDownloadContext context)
+        {
+            M3u8Downloader m3U8Downloader = new(context,false);
+            m3U8Downloader.m3U8FileInfoClient = new M3u8FileInfoClient(context);
+            m3U8Downloader.m3UDownloaderClient = new DownloaderClient(context)
+            {
+                GetLiveFileInfoFunc = m3U8Downloader.m3U8FileInfoClient.M3UFileReadManager.GetM3u8FileInfo
+            };
+
+            m3U8Downloader.m3UCombinerClient = new M3uCombinerClient(context.Log, context.DownloadParam, (IMergeSetting)context.DownloaderSetting);
+
+            IM3u8DownloadParam m3U8DownloadParam = (IM3u8DownloadParam)context.DownloadParam;
+            m3U8Downloader.M3UKeyInfo = m3U8DownloadParam.M3UKeyInfo;
+            return m3U8Downloader;
+        }
+
+        //通过接口创建
+        public static M3u8Downloader CreateM3u8Downloader(
+            IDownloadContext context,
+            IM3uFileInfo m3UFileInfo)
+        {
+            M3u8Downloader m3U8Downloader = new(context,true)
+            {
+                m3UDownloaderClient = new DownloaderClient(context),
+                m3UCombinerClient = new M3uCombinerClient(context.Log, context.DownloadParam, (IMergeSetting)context.DownloaderSetting),
+
+                M3U8FileInfo = m3UFileInfo
+            };
+            context.Log.Info("通过接口传入m3u8文件的视频流有{0}个,将跳过获取操作开始直接下载", m3UFileInfo.MediaFiles.Count);
+            return m3U8Downloader;
+        }
+    }
+}

@@ -1,0 +1,223 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:MaterialStyles="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
+             xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:vm="using:FlowGet.ViewModels.Menus"
+             xmlns:behavior="using:FlowGet.Behaviors"
+             xmlns:converters="using:FlowGet.Converters"
+             x:DataType="vm:SettingsViewModel"
+             x:Class="FlowGet.Views.Menus.SettingsView">
+
+    <Interaction.Behaviors>
+        <LoadedTrigger>
+            <InvokeCommandAction Command="{Binding InitializeCommand}" />
+        </LoadedTrigger>
+    </Interaction.Behaviors>
+
+    <Grid RowDefinitions="*,auto">
+        <MaterialStyles:SnackbarHost HostName="SettingsHost" SnackbarMaxCounts="5">
+            <ScrollViewer Margin="20,16,20,0">
+                <StackPanel Spacing="16">
+                <!-- 下载设置卡片 -->
+                <Border CornerRadius="8" Padding="24,20"
+                        Background="{DynamicResource MaterialCardBackgroundBrush}">
+                    <StackPanel Spacing="16" Name="SettingGrid"
+                                DataContext="{Binding SettingsServiceClone}">
+                        <TextBlock Text="下载设置" FontSize="18" FontWeight="Bold" />
+
+                        <!-- 同时下载任务数 -->
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="同时下载数" VerticalAlignment="Center" FontSize="14" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <Slider Height="20" IsSnapToTickEnabled="True" Minimum="1" Maximum="30"
+                                        TickFrequency="1" Value="{Binding MaxConcurrentDownloadCount}"
+                                        Width="200" />
+                                <TextBlock Text="{Binding MaxConcurrentDownloadCount}" FontSize="14"
+                                           VerticalAlignment="Center" Width="30" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 超时时间 -->
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="超时时间 (秒)" VerticalAlignment="Center" FontSize="14" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <Slider Height="20" IsSnapToTickEnabled="True" Minimum="1" Maximum="300"
+                                        TickFrequency="1" Value="{Binding Timeouts}" Width="200" />
+                                <TextBlock Text="{Binding Timeouts}" FontSize="14"
+                                           VerticalAlignment="Center" Width="30" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 保存路径 -->
+                        <Grid ColumnDefinitions="140,*,auto">
+                            <TextBlock Text="保存路径" VerticalAlignment="Center" FontSize="14" />
+                            <TextBox Grid.Column="1" Name="savePathTextbox" FontSize="14"
+                                     VerticalAlignment="Center" IsReadOnly="True"
+                                     Text="{Binding SavePath}" />
+                            <Button Grid.Column="2" Margin="8,0,0,0"
+                                    Theme="{StaticResource MaterialFlatButton}" Classes="primary">
+                                <avalonia:MaterialIcon Kind="FolderOpen" Width="20" Height="20" />
+                                <Interaction.Behaviors>
+                                    <behavior:OpenFileDialogBehavior IsFile="False"
+                                        AttachedTextBox="{Binding ElementName=savePathTextbox}" />
+                                </Interaction.Behaviors>
+                            </Button>
+                        </Grid>
+
+                        <!-- 转码格式 -->
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="转码格式" VerticalAlignment="Center" FontSize="14" />
+                            <ComboBox Grid.Column="1" FontSize="14"
+                                      SelectedValue="{Binding SelectedFormat}"
+                                      ItemsSource="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).Formats}"
+                                      Width="120" HorizontalAlignment="Left" />
+                        </Grid>
+
+                        <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="重置地址" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch HorizontalAlignment="Left" Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding IsResetAddress}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="重置名称" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch HorizontalAlignment="Left" Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding IsResetName}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="清理缓存" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch HorizontalAlignment="Left" Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding IsCleanUp}" />
+                            </DockPanel>
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="暗色模式" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch HorizontalAlignment="Left" Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding IsDarkMode}"
+                                              Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ToggleDarkModeCommand}" />
+                            </DockPanel>
+                        </WrapPanel>
+
+                        <!-- M3U8 子配置 -->
+                        <Separator Margin="0,4" />
+                        <TextBlock Text="M3U8 下载专用" FontSize="16" FontWeight="Bold" />
+
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="线程数量" VerticalAlignment="Center" FontSize="14" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <Slider Height="20" IsSnapToTickEnabled="True" Minimum="1" Maximum="200"
+                                        TickFrequency="1" Value="{Binding MaxThreadCount}" Width="200" />
+                                <TextBlock Text="{Binding MaxThreadCount}" FontSize="14"
+                                           VerticalAlignment="Center" Width="30" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="重试次数" VerticalAlignment="Center" FontSize="14" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12">
+                                <Slider Height="20" IsSnapToTickEnabled="True" Minimum="1" Maximum="20"
+                                        TickFrequency="1" Value="{Binding RetryCount}" Width="200" />
+                                <TextBlock Text="{Binding RetryCount}" FontSize="14"
+                                           VerticalAlignment="Center" Width="30" />
+                            </StackPanel>
+                        </Grid>
+
+                        <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="强制下载" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch HorizontalAlignment="Left" Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding SkipRequestError}">
+                                    <Interaction.Behaviors>
+                                        <behavior:LinkageToggleButtonBehavior
+                                            Target="{Binding #forceMergerButton}" />
+                                    </Interaction.Behaviors>
+                                </ToggleSwitch>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,24,0">
+                                <TextBlock Text="强制合并" FontSize="14" VerticalAlignment="Center" />
+                                <ToggleSwitch Name="forceMergerButton" HorizontalAlignment="Left"
+                                              Margin="12,0,0,0"
+                                              Theme="{StaticResource MaterialDesignSwitchToggleButton}"
+                                              IsChecked="{Binding ForcedMerger}" />
+                            </DockPanel>
+                        </WrapPanel>
+
+                        <!-- 直播配置 -->
+                        <Separator Margin="0,4" />
+                        <TextBlock Text="直播配置" FontSize="16" FontWeight="Bold" />
+
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="录制时长" VerticalAlignment="Center" FontSize="14" />
+                            <TimePicker Grid.Column="1" SelectedTime="{Binding RecordDuration}" FontSize="14"
+                                        assists:TimePickerAssist.CanSelectSeconds="{x:True}"
+                                        Width="200" HorizontalAlignment="Left" />
+                        </Grid>
+
+                        <!-- 网络配置 (放在同一个卡片内以便 Headers 绑定到 SettingsServiceClone) -->
+                        <Separator Margin="0,4" />
+                        <TextBlock Text="网络设置" FontSize="16" FontWeight="Bold" />
+
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="HTTP 代理" VerticalAlignment="Center" FontSize="14" />
+                            <StackPanel Grid.Column="1" Name="proxyInfo"
+                                        DataContext="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).ProxyInfo}">
+                                <TextBox PlaceholderText="http://127.0.0.1:7890" FontSize="14"
+                                         Text="{Binding Address}" />
+                                <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                                    <TextBox Text="{Binding UserName}" FontSize="14"
+                                             PlaceholderText="账号 (选填)" Margin="0,0,4,0" />
+                                    <TextBox Grid.Column="1" Text="{Binding PassWord}" FontSize="14"
+                                             PlaceholderText="密码 (选填)" Margin="4,0,0,0" />
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="140,auto">
+                            <TextBlock VerticalAlignment="Top" Margin="0,8,0,0" />
+                            <Button Grid.Column="1" HorizontalAlignment="Left"
+                                    Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).TryConnectProxyCommand}"
+                                    CommandParameter="{Binding #proxyInfo.DataContext}"
+                                    Content="测试连接" Width="90" Height="36" />
+                        </Grid>
+
+                        <!-- 自定义请求头 (DataContext 是 SettingsServiceClone, 所以 Headers 可以正确绑定) -->
+                        <Grid ColumnDefinitions="140,*">
+                            <TextBlock Text="请求头部" VerticalAlignment="Center" FontSize="14" />
+                            <TextBox Grid.Column="1" FontSize="13"
+                                     Text="{Binding Headers, Converter={x:Static converters:DictHeaderToStrHeaderConverter.Instance}}"
+                                     Theme="{StaticResource OutlineTextBox}"
+                                     VerticalAlignment="Stretch"
+                                     Margin="0" MinHeight="60"
+                                     AcceptsReturn="True"
+                                     PlaceholderText="key1: value1&#x0a;key2: value2" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+        </MaterialStyles:SnackbarHost>
+
+        <!-- 底部操作按钮 -->
+        <Border Grid.Row="1" Padding="16,12"
+                Background="{DynamicResource MaterialCardBackgroundBrush}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource MaterialBorderBrush}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="16">
+                <Button Command="{Binding SubmitSettingInfoCommand}"
+                        CommandParameter="{Binding #SettingGrid.DataContext}"
+                        Content="保存设置" Width="120" Height="38" Classes="primary" />
+                <Button Command="{Binding ResetSettingInfoCommand}"
+                        Content="重置" Width="120" Height="38" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

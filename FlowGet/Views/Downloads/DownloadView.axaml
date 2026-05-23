@@ -1,0 +1,233 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:FlowGet.ViewModels.Downloads"
+             mc:Ignorable="d" d:DesignWidth="760" d:DesignHeight="120"
+             xmlns:model="using:FlowGet.Models"
+             xmlns:commonmodel="using:FlowGet.Common.Models"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:converters="using:FlowGet.Converters"
+             xmlns:menus="using:FlowGet.ViewModels.Menus"
+             x:DataType="vm:DownloadViewModel"
+             x:Class="FlowGet.Views.Downloads.DownloadView">
+
+    <Border CornerRadius="8" Padding="16,12" Margin="0,0,0,0"
+            Background="{DynamicResource MaterialCardBackgroundBrush}">
+        <Grid RowDefinitions="auto,auto,auto">
+            <!-- 第一行：名称 + URL + 操作按钮 -->
+            <Grid ColumnDefinitions="*,auto">
+                <StackPanel>
+                    <TextBlock Text="{Binding VideoName}" FontSize="15" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding RequestUrl, TargetNullValue='(无请求地址)'}"
+                               FontSize="12" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource MaterialTextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+
+                <!-- 操作按钮 -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2"
+                            VerticalAlignment="Center">
+                    <!-- 排序按钮 -->
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <Button Padding="2" VerticalAlignment="Center"
+                                ToolTip.Tip="上移"
+                                Theme="{DynamicResource MaterialFlatButton}"
+                                Command="{Binding $parent[UserControl].((menus:MainWindowViewModel)DataContext).MoveUpCommand}"
+                                CommandParameter="{Binding}">
+                            <avalonia:MaterialIcon Width="16" Height="16" Kind="ChevronUp" />
+                        </Button>
+                        <Button Padding="2" VerticalAlignment="Center"
+                                ToolTip.Tip="下移"
+                                Theme="{DynamicResource MaterialFlatButton}"
+                                Command="{Binding $parent[UserControl].((menus:MainWindowViewModel)DataContext).MoveDownCommand}"
+                                CommandParameter="{Binding}">
+                            <avalonia:MaterialIcon Width="16" Height="16" Kind="ChevronDown" />
+                        </Button>
+                    </StackPanel>
+                    <Separator Width="8" />
+                    <Button Padding="4" VerticalAlignment="Center" Classes="primary"
+                            ToolTip.Tip="停止下载"
+                            Theme="{DynamicResource MaterialFlatButton}"
+                            Command="{Binding CancelCommand}"
+                            IsVisible="{Binding $self.IsEffectivelyEnabled}">
+                        <avalonia:MaterialIcon Width="20" Height="20" Kind="StopCircleOutline" />
+                    </Button>
+                    <Button Padding="4" VerticalAlignment="Center" Classes="primary"
+                            ToolTip.Tip="重新开始"
+                            Theme="{DynamicResource MaterialFlatButton}"
+                            Command="{Binding RestartCommand}"
+                            IsVisible="{Binding $self.IsEffectivelyEnabled}">
+                        <avalonia:MaterialIcon Width="20" Height="20" Kind="Restart" />
+                    </Button>
+                    <Button Padding="4" VerticalAlignment="Center" Classes="primary"
+                            ToolTip.Tip="显示文件目录"
+                            Theme="{DynamicResource MaterialFlatButton}"
+                            Command="{Binding ShowFileCommand}"
+                            IsVisible="{Binding $self.IsEffectivelyEnabled}">
+                        <avalonia:MaterialIcon Width="20" Height="20" Kind="FileFindOutline" />
+                    </Button>
+                    <ToggleButton x:Name="VisibilityBtn" Theme="{StaticResource MaterialFlatButton}"
+                                  Classes="primary" Height="28" Padding="4"
+                                  VerticalContentAlignment="Center" VerticalAlignment="Center">
+                        <ToggleButton.Styles>
+                            <Style Selector="ToggleButton">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                                <Style Selector="^:checked">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <Template>
+                                                <avalonia:MaterialIcon VerticalAlignment="Center"
+                                                    Width="20" Height="20"
+                                                    Kind="ChevronUpCircleOutline" />
+                                            </Template>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                                <Style Selector="^:unchecked">
+                                    <Setter Property="Content">
+                                        <Setter.Value>
+                                            <Template>
+                                                <avalonia:MaterialIcon VerticalAlignment="Center"
+                                                    Width="20" Height="20"
+                                                    Kind="ChevronDownCircleOutline" />
+                                            </Template>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Style>
+                        </ToggleButton.Styles>
+                    </ToggleButton>
+                </StackPanel>
+            </Grid>
+
+            <!-- 第二行：进度条 + 状态 + 速度 -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,auto,auto" Margin="0,10,0,0">
+                <!-- 进度条 -->
+                <ProgressBar Grid.Column="0"
+                    Classes.parsed="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Parsed}}"
+                    Classes.vod="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.StartedVod}}"
+                    Classes.live="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.StartedLive}}"
+                    Maximum="1" Minimum="0" Height="6"
+                    VerticalAlignment="Center">
+                    <ProgressBar.Styles>
+                        <Style Selector="ProgressBar">
+                            <Setter Property="IsVisible" Value="False" />
+                            <Setter Property="IsIndeterminate" Value="False" />
+                            <Style Selector="^.parsed">
+                                <Setter Property="IsVisible" Value="True" />
+                                <Setter Property="IsIndeterminate" Value="True" />
+                            </Style>
+                            <Style Selector="^.vod">
+                                <Setter Property="IsVisible" Value="True" />
+                                <Setter Property="Value" Value="{Binding ProgressNum, Mode=OneWay}" />
+                            </Style>
+                            <Style Selector="^.live">
+                                <Setter Property="IsVisible" Value="True" />
+                                <Setter Property="IsIndeterminate" Value="True" />
+                            </Style>
+                            <!-- 轨道透明，去掉全紫底色 -->
+                            <Style Selector="^.vod /template/ Border#PART_Track">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource MaterialBorderBrush}" />
+                                <Setter Property="BorderThickness" Value="1" />
+                            </Style>
+                            <Style Selector="^.live /template/ Border#PART_Track">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource MaterialBorderBrush}" />
+                                <Setter Property="BorderThickness" Value="1" />
+                            </Style>
+                        </Style>
+                    </ProgressBar.Styles>
+                </ProgressBar>
+
+                <!-- 速度 -->
+                <TextBlock Grid.Column="1" Margin="12,0,0,0" FontSize="13"
+                           Text="{Binding DownloadRateBytes, Converter={x:Static converters:LongToBitrateConverter.Instance}}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource MaterialTextSecondaryBrush}" />
+
+                <!-- 状态标签 -->
+                <TextBlock Grid.Column="2" Margin="8,0,0,0" FontSize="13"
+                    Classes.parsed="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Parsed}}"
+                    Classes.vod="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.StartedVod}}"
+                    Classes.live="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.StartedLive}}"
+                    Classes.enqueued="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Enqueued}}"
+                    Classes.completed="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Completed}}"
+                    Classes.canceled="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Canceled}}"
+                    Classes.failed="{Binding Status, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static commonmodel:DownloadStatus.Failed}}"
+                    VerticalAlignment="Center" FontWeight="Medium">
+                    <TextBlock.Styles>
+                        <Style Selector="TextBlock.parsed">
+                            <Setter Property="Text" Value="解析中..." />
+                        </Style>
+                        <Style Selector="TextBlock.vod">
+                            <Setter Property="Text" Value="{Binding ProgressNum, StringFormat=\{0:P1\}}" />
+                        </Style>
+                        <Style Selector="TextBlock.live">
+                            <Setter Property="Text" Value="{Binding ProgressNum, Converter={x:Static converters:DoubleToTimespanConverters.Instance}}" />
+                        </Style>
+                        <Style Selector="TextBlock.enqueued">
+                            <Setter Property="Text" Value="等待中" />
+                        </Style>
+                        <Style Selector="TextBlock.completed">
+                            <Setter Property="Foreground" Value="#2E7D32" />
+                            <Setter Property="Text" Value="已完成" />
+                        </Style>
+                        <Style Selector="TextBlock.canceled">
+                            <Setter Property="Foreground" Value="#E65100" />
+                            <Setter Property="Text" Value="已停止" />
+                        </Style>
+                        <Style Selector="TextBlock.failed">
+                            <Setter Property="Foreground" Value="#C62828" />
+                            <Setter Property="Text" Value="失败" />
+                        </Style>
+                    </TextBlock.Styles>
+                </TextBlock>
+            </Grid>
+
+            <!-- 第三行：日志区 (可展开) -->
+            <ItemsControl Grid.Row="2" Height="140" Margin="0,8,0,0"
+                          ItemsSource="{Binding Logs}"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          IsVisible="{Binding #VisibilityBtn.IsChecked}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <Border CornerRadius="4" Background="{DynamicResource MaterialThemeBackgroundBrush}">
+                            <ScrollViewer>
+                                <ItemsPresenter />
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock FontSize="12" FontFamily="Consolas,Courier New,monospace">
+                            <Run Text="{Binding Time, StringFormat='yyyy-MM-dd HH:mm:ss', Mode=OneWay}" Foreground="#888" />
+                            <Run Text="  " />
+                            <Run Classes.error="{Binding Type, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static model:LogType.Error}}"
+                                 Classes.warning="{Binding Type, Converter={x:Static converters:EqualityConverter.IsEqual}, ConverterParameter={x:Static model:LogType.Warning}}"
+                                 Text="{Binding Message, Mode=OneWay}">
+                                <Run.Styles>
+                                    <Style Selector="Run.error">
+                                        <Setter Property="Foreground" Value="#C62828" />
+                                    </Style>
+                                    <Style Selector="Run.warning">
+                                        <Setter Property="Foreground" Value="#E65100" />
+                                    </Style>
+                                </Run.Styles>
+                            </Run>
+                        </TextBlock>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
+    </Border>
+</UserControl>

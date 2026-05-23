@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Authors>XyzBeta</Authors>
+    <Copyright>原作者 Harlan-H (https://github.com/Harlan-H/M3u8Downloader_H), 二开 XyzBeta. MIT.</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugSymbols>False</DebugSymbols>
+		<DebugType>None</DebugType>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="DownloaderSources\**" />
+	  <EmbeddedResource Remove="DownloaderSources\**" />
+	  <None Remove="DownloaderSources\**" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowGet.Abstractions\FlowGet.Abstractions.csproj" />
+    <ProjectReference Include="..\FlowGet.M3U8\FlowGet.M3U8.csproj" />
+  </ItemGroup>
+
+</Project>

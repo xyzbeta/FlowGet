@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:vm="using:FlowGet.ViewModels.Menus"
+             x:DataType="vm:ExtensionViewModel"
+             x:Class="FlowGet.Views.Menus.ExtensionView">
+
+    <ScrollViewer Margin="20,16,20,0">
+        <StackPanel Spacing="16">
+
+            <!-- 连接状态卡片 -->
+            <Border CornerRadius="8" Padding="24,20"
+                    Background="{DynamicResource MaterialCardBackgroundBrush}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="浏览器扩展" FontSize="18" FontWeight="Bold" />
+                    <Grid ColumnDefinitions="auto,*">
+                        <Ellipse Width="12" Height="12" VerticalAlignment="Center"
+                                 Fill="#4CAF50" IsVisible="{Binding IsExtensionConnected}" />
+                        <Ellipse Width="12" Height="12" VerticalAlignment="Center"
+                                 Fill="#9E9E9E" IsVisible="{Binding !IsExtensionConnected}" />
+                        <TextBlock Grid.Column="1" Margin="12,0,0,0" FontSize="14"
+                                   Text="{Binding HttpServicePort, StringFormat='API 端口: {0}'}"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock Text="FlowGet Sniffer 可自动嗅探网页中的 M3U8 流媒体资源，一键发送到 FlowGet 进行下载。" TextWrapping="Wrap" FontSize="13" Opacity="0.7" />
+                </StackPanel>
+            </Border>
+
+            <!-- 安装步骤卡片 -->
+            <Border CornerRadius="8" Padding="24,20"
+                    Background="{DynamicResource MaterialCardBackgroundBrush}">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="安装步骤" FontSize="18" FontWeight="Bold" />
+
+                    <Border CornerRadius="6" Padding="16,12"
+                            Background="{DynamicResource MaterialThemeBackgroundBrush}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="1. 下载扩展" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="点击下方按钮，将 flowget-extension.zip 保存到本地" FontSize="13" Opacity="0.7" TextWrapping="Wrap" />
+                            <Button Command="{Binding DownloadExtensionCommand}" Width="160" Height="36" Margin="0,4,0,0"
+                                    HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <avalonia:MaterialIcon Kind="Download" Width="18" Height="18" />
+                                    <TextBlock Text="下载扩展" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                    <Border CornerRadius="6" Padding="16,12"
+                            Background="{DynamicResource MaterialThemeBackgroundBrush}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="2. 安装到 Chrome" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Opacity="0.7">
+                                <Run Text="打开 Chrome，地址栏输入 "/>
+                                <Run FontWeight="SemiBold" Text="chrome://extensions"/>
+                                <Run Text=" 并回车，开启右上角 "/>
+                                <Run FontWeight="SemiBold" Text="开发者模式"/>
+                                <Run Text="，将下载的 zip 文件直接拖入页面即可完成安装"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Border>
+
+            <!-- 使用说明 -->
+            <Border CornerRadius="8" Padding="24,20"
+                    Background="{DynamicResource MaterialCardBackgroundBrush}">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="使用说明" FontSize="18" FontWeight="Bold" />
+                    <TextBlock TextWrapping="Wrap" FontSize="13" Opacity="0.7">
+                        <Run Text="1. 打开任意视频播放网站，播放视频"/>
+                        <LineBreak/>
+                        <Run Text="2. 点击 Chrome 右上角扩展图标"/>
+                        <LineBreak/>
+                        <Run Text="3. 在弹窗中查看已检测到的 M3U8 资源"/>
+                        <LineBreak/>
+                        <Run Text="4. 点击 发送 即可推送到 FlowGet 下载"/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

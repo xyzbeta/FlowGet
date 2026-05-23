@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M3U8 Sniffer 设置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+            font-size: 14px;
+            color: #333;
+            background: #f8f9fa;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+        h1 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            color: #1a73e8;
+        }
+        .section {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .field {
+            margin-bottom: 12px;
+        }
+        .field:last-child { margin-bottom: 0; }
+        label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 4px;
+            color: #555;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-primary {
+            background: #1a73e8;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-outline {
+            background: #fff;
+            color: #1a73e8;
+            border: 1px solid #1a73e8;
+        }
+        .btn-outline:hover { background: #e8f0fe; }
+        .btn-save {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .status-text {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .status-ok { color: #34a853; }
+        .status-fail { color: #ea4335; }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .checkbox-item:hover { background: #f1f3f4; }
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #1a73e8;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+    <h1>&#9881; M3U8 Sniffer 设置</h1>
+
+    <!-- 端口设置 -->
+    <div class="section">
+        <div class="section-title">FlowGet 连接</div>
+        <div class="field">
+            <label for="port">端口</label>
+            <div class="input-row">
+                <input type="number" id="port" min="1" max="65535" value="65432">
+                <button id="btn-probe" class="btn btn-outline">&#128269; 自动检测</button>
+            </div>
+            <div id="port-status" class="status-text"></div>
+        </div>
+    </div>
+
+    <!-- 保存路径 -->
+    <div class="section">
+        <div class="section-title">下载设置</div>
+        <div class="field">
+            <label for="savePath">默认保存路径（留空使用 FlowGet 默认）</label>
+            <input type="text" id="savePath" placeholder="例如: D:\Downloads">
+        </div>
+    </div>
+
+    <!-- 请求头 -->
+    <div class="section">
+        <div class="section-title">自动附带请求头</div>
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" id="h-cookie" checked>
+                Cookie
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="h-referer" checked>
+                Referer / Origin
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="h-user-agent" checked>
+                User-Agent
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" id="h-authorization">
+                Authorization（如有）
+            </label>
+        </div>
+    </div>
+
+    <button id="btn-save" class="btn btn-primary btn-save">保存设置</button>
+    <div id="toast" class="toast">设置已保存</div>
+
+    <script src="options.js" type="module"></script>
+</body>
+</html>

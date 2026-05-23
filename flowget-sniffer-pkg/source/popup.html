@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=420">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- 头部 -->
+  <header class="header">
+    <h1 class="title">FlowGet Sniffer</h1>
+    <button id="btn-toggle" class="icon-btn" title="设置">&#9881;</button>
+  </header>
+
+  <!-- 主视图：列表 -->
+  <div id="view-list" class="view">
+    <div id="status-bar" class="status-bar disconnected">
+      <span id="status-icon" class="status-icon">&#9679;</span>
+      <span id="status-text">检测中...</span>
+      <button id="btn-pause" class="pause-btn" title="暂停/恢复嗅探">⏸ 暂停嗅探</button>
+    </div>
+    <div id="suspicious-banner" class="suspicious-banner" style="display:none">
+      <span id="banner-text"></span>
+      <button id="banner-action" class="btn btn-sm btn-outline"></button>
+    </div>
+    <div id="stream-list" class="stream-list">
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">&#128269;</div>
+        <p>当前页面未检测到 M3U8 资源</p>
+        <p class="empty-hint">打开视频页面播放后刷新此面板</p>
+      </div>
+    </div>
+    <footer class="footer">
+      <button id="btn-clear" class="btn btn-secondary">&#128465; 清空</button>
+      <button id="btn-send-all" class="btn btn-primary">&#128228; 全部发送</button>
+    </footer>
+  </div>
+
+  <!-- 设置视图（默认隐藏） -->
+  <div id="view-settings" class="view" style="display:none">
+    <div class="settings-body">
+      <!-- 嗅探控制 -->
+      <div class="section">
+        <div class="section-title">嗅探控制</div>
+        <div class="field row">
+          <label>全局暂停嗅探</label>
+          <button id="cfg-pause" class="toggle-btn on" title="切换暂停/启用">已启用</button>
+        </div>
+        <div class="field">
+          <label>黑名单域名（每行一个）</label>
+          <textarea id="cfg-blocklist" rows="3" placeholder="example.com&#10;youtube.com"></textarea>
+          <div class="field-hint" style="margin-top:4px">匹配域名及子域名，如 a.example.com 也生效</div>
+        </div>
+        <div class="field" style="margin-top:8px">
+          <label>当前页面</label>
+          <div class="input-row">
+            <span id="cfg-current-host" class="current-host">-</span>
+          </div>
+          <div style="margin-top:4px;display:flex;gap:6px">
+            <button id="btn-add-host" class="btn btn-sm btn-outline">+ 禁止此域名</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">FlowGet 连接</div>
+        <div class="field">
+          <label>端口</label>
+          <div class="input-row">
+            <input type="number" id="cfg-port" min="1" max="65535" value="65432">
+            <button id="btn-probe" class="btn btn-sm btn-outline">自动检测</button>
+          </div>
+          <div id="port-status" class="field-hint"></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">下载设置</div>
+        <div class="field">
+          <label>默认保存路径（留空使用默认）</label>
+          <input type="text" id="cfg-savepath" placeholder="例如: D:\Downloads">
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">自动附带请求头</div>
+        <label class="check-item"><input type="checkbox" id="cfg-h-cookie" checked> Cookie</label>
+        <label class="check-item"><input type="checkbox" id="cfg-h-referer" checked> Referer / Origin</label>
+        <label class="check-item"><input type="checkbox" id="cfg-h-ua" checked> User-Agent</label>
+        <label class="check-item"><input type="checkbox" id="cfg-h-auth"> Authorization</label>
+      </div>
+
+      <button id="btn-save" class="btn btn-primary btn-full">保存设置</button>
+      <div id="save-msg" class="save-msg"></div>
+    </div>
+  </div>
+
+</div>
+<script src="popup.js" type="module"></script>
+</body>
+</html>

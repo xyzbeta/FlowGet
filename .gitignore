@@ -1,0 +1,28 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.vs/
+.vscode/
+
+## 构建产物
+*.zip
+*.tar.gz
+*.7z
+!flowget-sniffer-pkg/*.zip
+!FlowGet/Assets/*.zip
+
+## 运行时二进制（构建时自动下载）
+ffmpeg.exe
+ffmpeg
+
+## IDE
+.idea/
+*.DotSettings.user
+*.swp
+*.swo
+
+## macOS
+.DS_Store

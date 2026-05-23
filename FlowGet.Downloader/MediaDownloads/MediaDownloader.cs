@@ -1,0 +1,72 @@
+﻿using FlowGet.Abstractions.Common;
+using FlowGet.Abstractions.Models;
+using FlowGet.Common.Extensions;
+using FlowGet.Downloader.Utils;
+using System.Net;
+using System.Net.Http.Headers;
+
+namespace FlowGet.Downloader.MediaDownloads
+{
+    public class MediaDownloader(IDownloadContext downloadContext) : DownloaderBase(downloadContext)
+    {
+        private readonly IDownloadContext downloadContext = downloadContext;
+        protected async Task SetVideoSize(IStreamInfo streamInfo, CancellationToken cancellationToken = default)
+        { 
+            if (streamInfo.FileSize is null)
+            {
+                try
+                {
+                    long fileSize = await downloadContext.HttpClient.TryGetContentLengthAsync(streamInfo.Url.OriginalString, _headers, cancellationToken) ?? throw new InvalidDataException("获取视频大小失败");
+                    streamInfo.SetFileSize(fileSize);
+                    downloadContext.Log?.Info("获得文件大小是:{0}", new FileSize(fileSize).ToString());
+                }
+                catch (HttpRequestException ex) 
+                {
+                    if(ex.StatusCode == HttpStatusCode.Forbidden)
+                    {
+                        throw new HttpRequestException("请设置referer后再次尝试", ex, ex.StatusCode);
+                    }
+                    throw new HttpRequestException("获得文件大小失败",ex,ex.StatusCode);
+                }
+            }
+        }
+
+        public override async Task DownloadAsync(IStreamInfo streamInfo, CancellationToken cancellationToken = default)
+        {
+            await base.DownloadAsync(streamInfo,cancellationToken);
+            DialogProgress.SetDownloadStatus(false);
+
+            downloadContext.Log?.Info("【{0}】开始下载", streamInfo.Title);
+            await SetVideoSize(streamInfo, cancellationToken);
+
+            string mediaPath = Path.Combine(_cachePath, streamInfo.Title);
+
+            RangeHeaderValue rangeHeaderValue;
+            FileInfo fileInfo = new(mediaPath);
+            if (fileInfo.Exists && fileInfo.Length == streamInfo.FileSize) 
+            {
+                downloadContext.Log?.Info("【{0}】已经下载完成,跳过下载", streamInfo.Title);
+                return;
+            }
+            else if (fileInfo.Exists && fileInfo.Length < streamInfo.FileSize)
+            {
+                rangeHeaderValue = new RangeHeaderValue(fileInfo.Length, streamInfo.FileSize);
+            }
+            else
+                rangeHeaderValue = new RangeHeaderValue(0, streamInfo.FileSize);
+            
+            using CancellationTokenSource cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(downloadContext.DownloaderSetting.Timeouts));
+            downloadContext.Log?.Info("当前超时时间是【{0}】秒,请不要设置过小以免造成过早退出", downloadContext.DownloaderSetting.Timeouts);
+
+            await DownloadAsynInternal(streamInfo, _headers, rangeHeaderValue, () => fileInfo.Open(FileMode.Append), cancellationTokenSource.Token);
+            downloadContext.Log?.Info("【{0}】下载完成", streamInfo.Title);
+        }
+
+        protected override void UpdateProgress(long total, long? filesize)
+        {
+            DialogProgress?.Report(total / (double)filesize!);
+        }
+
+    }
+}

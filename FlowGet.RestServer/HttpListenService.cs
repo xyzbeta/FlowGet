@@ -1,0 +1,212 @@
+﻿using FlowGet.Abstractions.Common;
+using FlowGet.Abstractions.M3u8;
+using FlowGet.M3U8;
+using FlowGet.M3U8.Extensions;
+using FlowGet.RestServer.Extensions;
+using FlowGet.RestServer.Models;
+using FlowGet.RestServer.Utils;
+using System.Net;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+
+namespace FlowGet.RestServer
+{
+    public class HttpListenService
+    {
+        private readonly char _DirectorySeparatorChar = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? '/' : '\\';
+        private readonly HttpListen httpListen = new();
+        private IAppCommandService AppCommandService = default!;
+
+        private readonly JsonSerializerOptions jsonSerializerOptions;
+        private readonly static HttpListenService instance = new();
+
+        public event EventHandler? RequestReceived;
+        public DateTime? LastRequestTime { get; private set; }
+        public int? Port { get; private set; }
+
+        public static HttpListenService Instance => instance;
+        private HttpListenService()
+        {
+            jsonSerializerOptions = new JsonSerializerOptions() { PropertyNameCaseInsensitive = true };
+            httpListen.RegisterService("downloadmedias", DownloadMedias);
+            httpListen.RegisterService("downloadbyurl", DownloadByUrl);
+            httpListen.RegisterService("downloadbycontent", DownloadByContent);
+            httpListen.RegisterService("downloadbyjsoncontent", DownloadByJsonContent);
+            httpListen.RegisterService("getm3u8data", GetM3u8FileInfo);
+        }
+
+        public void Initialization(IAppCommandService appCommandService)
+        {
+            AppCommandService = appCommandService;
+        }
+
+        public void Run(Action<int> SetPortAction)
+        {
+            for (int i = 65432; i > 65400; i--)
+            {
+                try
+                {
+                    httpListen.Run($"http://+:{i}/");
+                    Port = i;
+                    SetPortAction(i);
+                    break;
+                }
+                catch (HttpListenerException)
+                {
+                    continue;
+                }
+            }
+        }
+
+        private void DownloadMedias(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            try
+            {
+                RequestWithMediaUri? requestWithMediaUri = JsonSerializer.Deserialize<RequestWithMediaUri>(request.InputStream, jsonSerializerOptions);
+                if (requestWithMediaUri is null)
+                {
+                    response.Json(Response.Error("序列化失败"));
+                    return;
+                }
+
+                requestWithMediaUri.Validate();
+                if (!string.IsNullOrWhiteSpace(requestWithMediaUri.SavePath))
+                    requestWithMediaUri.SavePath = requestWithMediaUri.SavePath.Replace(_DirectorySeparatorChar, Path.DirectorySeparatorChar);
+                AppCommandService.DownloadMedia(null, requestWithMediaUri.ToMediaDownloadParams());
+                LastRequestTime = DateTime.UtcNow;
+                RequestReceived?.Invoke(this, EventArgs.Empty);
+
+                response.Json(Response.Success());
+            }
+            catch (Exception e)
+            {
+                response.Json(Response.Error($"请求失败,{e.Message}"));
+            }
+        }
+
+        private void DownloadByUrl(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            try
+            {
+                RequestWithURI? requestWithURI = JsonSerializer.Deserialize<RequestWithURI>(request.InputStream, jsonSerializerOptions);
+                if(requestWithURI is null)
+                {
+                    response.Json(Response.Error("序列化失败"));
+                    return;
+                }
+
+                requestWithURI.Validate();
+                if (!string.IsNullOrWhiteSpace(requestWithURI.SavePath))
+                    requestWithURI.SavePath = requestWithURI.SavePath.Replace(_DirectorySeparatorChar, Path.DirectorySeparatorChar);
+                AppCommandService.DownloadByUrl(null,requestWithURI.ToM3u8DownloadParams());
+                LastRequestTime = DateTime.UtcNow;
+                RequestReceived?.Invoke(this, EventArgs.Empty);
+
+                response.Json(Response.Success());
+            }
+            catch (Exception e)
+            {
+                response.Json(Response.Error($"请求失败,{e.Message}"));
+            }
+        }
+
+        private void DownloadByContent(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            try
+            {
+                RequestWithContent? requestWithContent = JsonSerializer.Deserialize<RequestWithContent>(request.InputStream, jsonSerializerOptions);
+                if (requestWithContent is null)
+                {
+                    response.Json(Response.Error("序列化失败"));
+                    return;
+                }
+
+
+                IM3uFileInfo? m3UFileInfo = M3u8FileInfoClient.CreateM3uFileReader(request.Url!).GetM3u8FileInfo(requestWithContent.Content);
+                if (m3UFileInfo is null)
+                {
+                    response.Json(Response.Error("m3u8内容读取失败,请检查传入的参数是否有误"));
+                    return;
+                }
+
+                if(m3UFileInfo!.MediaFiles is null || !m3UFileInfo.MediaFiles.Any())
+                {
+                    response.Json(Response.Error("m3u8的ts列表为空"));
+                    return;
+                }
+                requestWithContent.Validate();
+
+                RequestWithM3u8FileInfo requestWithM3U8FileInfo = new()
+                {
+                    M3UFileInfos = m3UFileInfo,
+                    VideoName = requestWithContent.VideoName,
+                    SavePath = !string.IsNullOrWhiteSpace(requestWithContent.SavePath)? requestWithContent.SavePath.Replace(_DirectorySeparatorChar, Path.DirectorySeparatorChar) : requestWithContent.SavePath,
+                    Headers = requestWithContent.Headers,
+                };
+                AppCommandService.DownloadByM3uFileInfo(null, requestWithM3U8FileInfo.ToDownloadParam(), requestWithM3U8FileInfo.M3UFileInfos);
+                LastRequestTime = DateTime.UtcNow;
+                RequestReceived?.Invoke(this, EventArgs.Empty);
+
+                response.Json(Response.Success());
+            }
+            catch (Exception e)
+            {
+                response.Json(Response.Error($"请求失败,{e.Message}"));
+            }
+
+        }
+
+        //视频地址 必须是http开头 或者磁盘根路径
+        private void DownloadByJsonContent(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            try
+            {
+                RequestWithM3u8FileInfo? requestWithM3U8FileInfo = JsonSerializer.Deserialize<RequestWithM3u8FileInfo>(request.InputStream, jsonSerializerOptions);
+                if (requestWithM3U8FileInfo is null)
+                {
+                    response.Json(Response.Error("序列化失败"));
+                    return;
+                }
+
+                requestWithM3U8FileInfo.Validate();
+                requestWithM3U8FileInfo.M3UFileInfos.PlaylistType = "VOD";
+                if (!string.IsNullOrWhiteSpace(requestWithM3U8FileInfo.SavePath))
+                    requestWithM3U8FileInfo.SavePath = requestWithM3U8FileInfo.SavePath.Replace(_DirectorySeparatorChar, Path.DirectorySeparatorChar);
+                AppCommandService.DownloadByM3uFileInfo(null, requestWithM3U8FileInfo.ToDownloadParam(), requestWithM3U8FileInfo.M3UFileInfos);
+                LastRequestTime = DateTime.UtcNow;
+                RequestReceived?.Invoke(this, EventArgs.Empty);
+
+                response.Json(Response.Success());
+            }
+            catch (Exception e)
+            {
+                response.Json(Response.Error($"请求失败,{e.Message}"));
+            }
+        }
+
+
+        private void GetM3u8FileInfo(HttpListenerRequest request, HttpListenerResponse response)
+        {
+            try
+            {
+                RequestWithGetM3u8FileInfo? requestWIthGetM3U8FileInfo = JsonSerializer.Deserialize<RequestWithGetM3u8FileInfo>(request.InputStream, jsonSerializerOptions);
+                if (requestWIthGetM3U8FileInfo is null)
+                {
+                    response.Json(Response.Error("序列化失败"));
+                    return;
+                }
+
+                requestWIthGetM3U8FileInfo.Validate();
+                IM3uFileInfo m3UFileInfo = M3u8FileInfoClient.CreateM3uFileReader(requestWIthGetM3U8FileInfo.Url!).GetM3u8FileInfo(requestWIthGetM3U8FileInfo.Content);
+                Response<IM3uFileInfo> r = m3UFileInfo.MediaFiles != null && m3UFileInfo.MediaFiles.Any()
+                                        ? new Response<IM3uFileInfo>(0, "解析成功", m3UFileInfo)
+                                        : new Response<IM3uFileInfo>(1, "没有包含任何数据", null);
+                response.Json(r);
+            }
+            catch (Exception ex)
+            {
+                response.Json(Response.Error($"解析失败,{ex.Message}"));
+            }
+        }
+    }
+}

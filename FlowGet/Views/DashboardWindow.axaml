@@ -1,0 +1,103 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:menu="using:FlowGet.ViewModels.Menus"
+        xmlns:viewmodels="using:FlowGet.ViewModels"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="650"
+        MinHeight="650" MinWidth="900"
+        x:Class="FlowGet.Views.DashboardWindow"
+        x:DataType="viewmodels:DashboardWindowViewModel"
+        Title="FlowGet"
+        Background="{DynamicResource MaterialThemeBackgroundBrush}">
+    <Design.DataContext>
+        <viewmodels:DashboardWindowViewModel/>
+    </Design.DataContext>
+
+    <Interaction.Behaviors>
+        <LoadedTrigger>
+            <InvokeCommandAction Command="{Binding InitializeCommand}" />
+        </LoadedTrigger>
+        <EventTriggerBehavior EventName="Closing">
+            <InvokeCommandAction Command="{Binding ClosedCommand}" />
+        </EventTriggerBehavior>
+    </Interaction.Behaviors>
+
+    <Grid ColumnDefinitions="240,*">
+        <!-- 侧边栏 -->
+        <Border Background="#0F172A" Grid.Column="0">
+            <Grid RowDefinitions="auto,*,auto">
+                <!-- 应用标题 -->
+                <StackPanel Grid.Row="0" Margin="24,30,24,24" HorizontalAlignment="Center">
+                    <TextBlock Text="FlowGet" FontSize="24" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" />
+                    <TextBlock Text="Stream Downloader" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,2,0,0" />
+                    <Border Background="#2563EB" CornerRadius="2" Width="40" Height="3" Margin="0,12,0,0" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- 导航项 -->
+                <StackPanel Grid.Row="1" Margin="12,0" Spacing="4">
+                    <RadioButton Command="{Binding NavigateToCommand}"
+                                 CommandParameter="{x:Type menu:MainWindowViewModel}"
+                                 IsChecked="True"
+                                 Theme="{StaticResource SidebarNavStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <avalonia:MaterialIcon Kind="Download" Width="22" Height="22" />
+                            <TextBlock Text="基本" FontSize="15" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton Command="{Binding NavigateToCommand}"
+                                 CommandParameter="{x:Type menu:SettingsViewModel}"
+                                 Theme="{StaticResource SidebarNavStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <avalonia:MaterialIcon Kind="Cog" Width="22" Height="22" />
+                            <TextBlock Text="设置" FontSize="15" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+
+                    <RadioButton Command="{Binding NavigateToCommand}"
+                                 CommandParameter="{x:Type menu:ExtensionViewModel}"
+                                 Theme="{StaticResource SidebarNavStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <avalonia:MaterialIcon Kind="Puzzle" Width="22" Height="22" />
+                            <TextBlock Text="扩展" FontSize="15" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+
+                <!-- 版本号 + 主题切换 -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,20" HorizontalAlignment="Center" Spacing="10">
+                    <Button Command="{Binding ToggleDarkModeCommand}"
+                            Theme="{StaticResource MaterialFlatButton}"
+                            HorizontalAlignment="Center"
+                            Width="44" Height="44"
+                            Padding="0">
+                        <Panel>
+                            <avalonia:MaterialIcon Kind="WeatherNight" Width="22" Height="22"
+                                Foreground="#CBD5E1"
+                                IsVisible="{Binding !IsDarkMode}" />
+                            <avalonia:MaterialIcon Kind="WeatherSunny" Width="22" Height="22"
+                                Foreground="#FFD54F"
+                                IsVisible="{Binding IsDarkMode}" />
+                        </Panel>
+                    </Button>
+                    <Separator Width="160" Opacity="0.1" />
+                    <TextBlock Text="{Binding Version, StringFormat='v{0}'}" Foreground="#64748B" FontSize="11" HorizontalAlignment="Center" />
+                    <Separator Width="100" Opacity="0.05" Margin="0,4" />
+                    <Button Content="Harlan-H/M3u8Downloader_H"
+                            Classes="link"
+                            Foreground="#64748B"
+                            FontSize="10" HorizontalAlignment="Center"
+                            Cursor="Hand"
+                            Command="{Binding OpenProjectUrlCommand}" />
+                    <TextBlock Text="二开 by XyzBeta · MIT 协议" Foreground="#475569" FontSize="10" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 内容区域 -->
+        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}"
+                        Background="{DynamicResource MaterialThemeBackgroundBrush}" />
+    </Grid>
+</Window>

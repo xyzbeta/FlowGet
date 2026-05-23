@@ -1,0 +1,205 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:menus="using:FlowGet.ViewModels.Menus"
+             xmlns:materialDesign="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             xmlns:MaterialStyles="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:converters="using:FlowGet.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+             xmlns:vm="using:FlowGet.ViewModels.Menus"
+             x:DataType="vm:MainWindowViewModel"
+             x:Class="FlowGet.Views.Menus.MainWindowView">
+
+    <Grid RowDefinitions="*,auto">
+        <materialDesign:DialogHost CloseOnClickAway="False">
+            <MaterialStyles:SnackbarHost HostName="MainWindowHost" SnackbarMaxCounts="5">
+                <Grid RowDefinitions="auto,auto,*" Margin="16,12,16,0">
+                    <!-- 标签页 -->
+                    <TabControl ItemsSource="{Binding SubWindows}" Margin="0,0,0,6">
+                        <TabControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Medium" />
+                            </DataTemplate>
+                        </TabControl.ItemTemplate>
+                        <TabControl.Styles>
+                            <Style Selector="TabItem">
+                                <Setter Property="Width" Value="160" />
+                                <Setter Property="Padding" Value="12,8" />
+                            </Style>
+                        </TabControl.Styles>
+                    </TabControl>
+
+                    <!-- 全局操作栏 -->
+                    <Border Grid.Row="1" Margin="0,0,0,8" Padding="8,6" CornerRadius="6"
+                            IsVisible="{Binding Downloads.Count}"
+                            Background="{DynamicResource MaterialCardBackgroundBrush}">
+                        <Grid ColumnDefinitions="auto,auto,*,auto">
+                            <Button Command="{Binding PauseAllCommand}"
+                                    IsVisible="{Binding IsNotPaused}"
+                                    Theme="{StaticResource MaterialFlatButton}"
+                                    ToolTip.Tip="暂停全部" Margin="0,0,4,0">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <avalonia:MaterialIcon Kind="PauseCircle" Width="18" Height="18" />
+                                    <TextBlock Text="全部暂停" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ResumeAllCommand}"
+                                    IsVisible="{Binding IsGlobalPaused}"
+                                    Theme="{StaticResource MaterialFlatButton}"
+                                    ToolTip.Tip="恢复全部" Margin="0,0,4,0">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <avalonia:MaterialIcon Kind="PlayCircle" Width="18" Height="18" />
+                                    <TextBlock Text="全部恢复" FontSize="13" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <TextBlock Grid.Column="2" Text="{Binding Downloads.Count, StringFormat='共 {0} 个任务'}"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MaterialTextSecondaryBrush}"
+                                       Margin="8,0,0,0" />
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="2">
+                                <TextBlock Text="拖拽 ··· 排序" FontSize="11" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource MaterialTextSecondaryBrush}" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- 内容区域 -->
+                    <Panel Grid.Row="2">
+
+                        <!-- 空状态 -->
+                        <Border IsVisible="{Binding !Downloads.Count}"
+                                Padding="40"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                CornerRadius="12"
+                                Background="{DynamicResource MaterialCardBackgroundBrush}">
+                            <StackPanel HorizontalAlignment="Center">
+                                <avalonia:MaterialIcon Kind="Download" Width="64" Height="64"
+                                                       Foreground="{DynamicResource MaterialPrimaryMidBrush}"
+                                                       HorizontalAlignment="Center" />
+                                <TextBlock Text="开始下载" FontSize="22" FontWeight="Bold"
+                                           HorizontalAlignment="Center" Margin="0,16,0,8" />
+                                <TextBlock HorizontalAlignment="Center" FontSize="14"
+                                           TextAlignment="Center" TextWrapping="Wrap">
+                                    <Run Text="复制 M3U8 链接或拖拽文件到下载地址框"/>
+                                    <LineBreak/>
+                                    <Run Text="支持 m3u8/json/txt 格式"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 下载列表 -->
+                        <ListBox ItemsSource="{Binding Downloads}"
+                                 SelectionMode="Multiple"
+                                 IsVisible="{Binding Downloads.Count}"
+                                 Margin="0,4,0,0">
+                            <ListBox.Resources>
+                                <ContextMenu x:Key="ItemContextMenu">
+                                    <MenuItem Header="复制地址"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).CopyUrlCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Width="16" Height="16" Kind="Link" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="复制名称"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).CopyTitleCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Width="16" Height="16" Kind="ContentCopy" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="复制日志"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).CopyLogsCommand}"
+                                              CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Width="16" Height="16" Kind="Notebook" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="停止下载所有选择项"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).StopDownloadsCommand}"
+                                              CommandParameter="{Binding $parent[ListBox].SelectedItems}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="StopCircleOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="重新开始所有选择项"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RestartDownloadsCommand}"
+                                              CommandParameter="{Binding $parent[ListBox].SelectedItems}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="Restart" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="重新开始所有失败的下载"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RestartFailedDownloadsCommand}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="RestartAlert" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <Separator />
+                                    <MenuItem Header="删除所有选择项"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveDownloadsCommand}"
+                                              CommandParameter="{Binding $parent[ListBox].SelectedItems}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="DeleteForever" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="删除所有失败的下载"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveFailedDownloadsCommand}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="DeleteAlert" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="删除所有闲置下载"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveInactiveDownloadsCommand}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="Delete" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                    <MenuItem Header="删除所有已完成记录"
+                                              Command="{Binding $parent[UserControl].((vm:MainWindowViewModel)DataContext).RemoveSuccessDownloadsCommand}">
+                                        <MenuItem.Icon>
+                                            <avalonia:MaterialIcon Kind="DeleteCircleOutline" />
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </ListBox.Resources>
+                            <ListBox.Styles>
+                                <Style Selector="ListBoxItem">
+                                    <Setter Property="ContextMenu" Value="{StaticResource ItemContextMenu}" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListBox.Styles>
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                        </ListBox>
+
+                    </Panel>
+                </Grid>
+            </MaterialStyles:SnackbarHost>
+        </materialDesign:DialogHost>
+
+        <!-- 底部状态栏 -->
+        <Border Grid.Row="1" Background="{DynamicResource MaterialCardBackgroundBrush}"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource MaterialBorderBrush}">
+            <Grid ColumnDefinitions="*,*" Margin="16,6">
+                <TextBlock Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                           FontSize="12" Foreground="{DynamicResource MaterialTextSecondaryBrush}"
+                           Text="{Binding HttpServicePort, TargetNullValue='REST API 未启动',
+                           StringFormat='API: http://127.0.0.1:{0}'}" />
+                <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontSize="12" Foreground="{DynamicResource MaterialTextSecondaryBrush}"
+                           Text="{Binding HttpServicePort, TargetNullValue='请运行 Add-PortAcl 脚本',
+                           StringFormat='端口: {0}'}" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

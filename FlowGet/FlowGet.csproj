@@ -1,0 +1,145 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+	<AssemblyVersion>1.0.0</AssemblyVersion>
+	<Version>1.0.0</Version>
+    <Authors>XyzBeta</Authors>
+    <Company>XyzBeta</Company>
+    <Copyright>原作者 Harlan-H (https://github.com/Harlan-H/M3u8Downloader_H), 二开作者 XyzBeta. MIT 协议.</Copyright>
+    <Description>Stream media downloader for HLS/M3U8. Original project: https://github.com/Harlan-H/M3u8Downloader_H</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyName>FlowGet</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
+  </PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugSymbols>False</DebugSymbols>
+		<DebugType>None</DebugType>
+	</PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Remove="Assets\icons.axaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\logo.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AsyncImageLoader.Avalonia" Version="3.8.0" />
+    <PackageReference Include="Avalonia" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.3" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+	  <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.1">
+		  <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+		  <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+	  </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="DialogHost.Avalonia" Version="0.12.2" />
+    <PackageReference Include="Material.Avalonia" Version="3.17.0" />
+    <PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowGet.Combiners\FlowGet.Combiners.csproj" />
+    <ProjectReference Include="..\FlowGet.Common\FlowGet.Common.csproj" />
+    <ProjectReference Include="..\FlowGet.Core\FlowGet.Core.csproj" />
+    <ProjectReference Include="..\FlowGet.Downloader\FlowGet.Downloader.csproj" />
+    <ProjectReference Include="..\FlowGet.M3U8\FlowGet.M3U8.csproj" />
+    <ProjectReference Include="..\FlowGet.RestServer\FlowGet.RestServer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Update="Assets\icons.axaml">
+      <SubType>Designer</SubType>
+    </AvaloniaResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\flowget-extension.zip" />
+  </ItemGroup>
+	
+	<!-- 只在 publish 时自动下载 ffmpeg -->
+	<Target Name="DownloadFFmpeg" BeforeTargets="PrepareForPublish" Condition="'$(RuntimeIdentifier)' != ''">
+
+		<PropertyGroup>
+			<!-- 下载脚本 -->
+			<FfmpegDownloadScript>$(MSBuildThisFileDirectory)DownloadFFmpeg.ps1</FfmpegDownloadScript>
+
+			<!-- PowerShell -->
+			<PowerShellCommand Condition="'$(OS)' == 'Windows_NT'">powershell.exe</PowerShellCommand>
+			<PowerShellCommand Condition="'$(OS)' != 'Windows_NT'">pwsh</PowerShellCommand>
+
+			<!-- PublishDir fallback -->
+			<PublishDir Condition="'$(PublishDir)' == ''">$(OutputPath)</PublishDir>
+
+			<!-- 平台判断 -->
+			<IsWindows>false</IsWindows>
+			<IsWindows Condition="&#xD;&#xA;				'$(RuntimeIdentifier)' == 'win-x64' OR&#xD;&#xA;				'$(RuntimeIdentifier)' == 'win-x86' OR&#xD;&#xA;				'$(RuntimeIdentifier)' == 'win-arm64'&#xD;&#xA;			">true</IsWindows>
+
+			<!-- ffmpeg 文件名 -->
+			<FfmpegExeName Condition="'$(IsWindows)' == 'true'">ffmpeg.exe</FfmpegExeName>
+			<FfmpegExeName Condition="'$(IsWindows)' != 'true'">ffmpeg</FfmpegExeName>
+
+			<!-- 路径（安全拼接） -->
+			<LocalFfmpegPath>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '$(FfmpegExeName)'))</LocalFfmpegPath>
+			<PublishFfmpegPath>$([System.IO.Path]::Combine('$(PublishDir)', '$(FfmpegExeName)'))</PublishFfmpegPath>
+		</PropertyGroup>
+
+		<Message Text="DownloadFFmpeg triggered: RID=$(RuntimeIdentifier)" Importance="high" />
+
+		<!-- 下载 -->
+		<Exec Condition="!Exists('$(PublishFfmpegPath)')" Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(FfmpegDownloadScript)&quot; -r &quot;$(RuntimeIdentifier)&quot;" ConsoleToMSBuild="true" IgnoreStandardErrorWarningFormat="true">
+			<Output TaskParameter="ExitCode" PropertyName="DownloadExitCode" />
+		</Exec>
+
+		<Error Text="FFmpeg下载失败，请检查上方错误日志" Condition="'$(DownloadExitCode)' != '' AND '$(DownloadExitCode)' != '0'" />
+
+		<!-- 创建目录 -->
+		<MakeDir Directories="$(PublishDir)" Condition="!Exists('$(PublishDir)')" />
+
+		<!-- 拷贝 -->
+		<Copy SourceFiles="$(LocalFfmpegPath)" DestinationFiles="$(PublishFfmpegPath)" SkipUnchangedFiles="true">
+			<Output TaskParameter="CopiedFiles" ItemName="CopiedFFmpeg" />
+		</Copy>
+
+		<Message Text="FFmpeg 已准备: @(CopiedFFmpeg)" Importance="high" />
+	</Target>
+
+	<Target Name="Copy Files" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' != '' AND $(RuntimeIdentifier.StartsWith('win-'))">
+		<Message Text="Copy $(ProjectDir)Add-PortAcl.ps1" Importance="high" />
+		<Copy SourceFiles="$(ProjectDir)Add-PortAcl.ps1" DestinationFiles="$(PublishDir)Add-PortAcl.ps1" />
+	</Target>
+
+	<Target Name="PackMacOSApp" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' != '' AND $(RuntimeIdentifier.StartsWith('osx-'))">
+		
+		<PropertyGroup>
+			<!-- PowerShell -->
+			<PowerShellCommand Condition="'$(OS)' == 'Windows_NT'">powershell.exe</PowerShellCommand>
+			<PowerShellCommand Condition="'$(OS)' != 'Windows_NT'">pwsh</PowerShellCommand>
+			
+			<!-- 打包脚本 -->
+			<MacPackScript>$(MSBuildThisFileDirectory)pack-macos.ps1</MacPackScript>
+
+			<SafePublishDir>$([System.String]::Copy('$(PublishDir)').TrimEnd('\').Replace('\','/'))</SafePublishDir>
+			
+		</PropertyGroup>
+
+		<Message Text="开始 macOS App 打包..." Importance="high" />
+
+		<Exec Command="$(PowerShellCommand) -ExecutionPolicy Bypass -File &quot;$(MacPackScript)&quot; -PublishDir &quot;$(SafePublishDir)&quot; -IconPath &quot;$(ProjectDir)Assets/logo.icns&quot;  -Version &quot;$(Version)&quot; -ShortVersion &quot;$(AssemblyVersion)&quot;" ConsoleToMSBuild="true" IgnoreStandardErrorWarningFormat="true" />
+	</Target>
+</Project>

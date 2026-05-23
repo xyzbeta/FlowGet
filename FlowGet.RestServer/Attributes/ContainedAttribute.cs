@@ -1,0 +1,16 @@
+﻿namespace FlowGet.RestServer.Attributes
+{
+    internal class ContainedAttribute : BaseAttribute
+    {
+        private readonly string[] content;
+        public ContainedAttribute(string[] content)
+        {
+            this.content = content;
+        }
+
+        public override bool Validate(object obj, object value)
+        {
+            return value is null || content.Contains(value);
+        }
+    }
+}

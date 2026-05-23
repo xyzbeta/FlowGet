@@ -1,0 +1,118 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using FlowGet.Extensions;
+using FlowGet.FrameWork;
+using FlowGet.Services;
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+namespace FlowGet.ViewModels.Menus
+{
+    public partial class SettingsViewModel(SettingsService settingService) : ViewModelBase
+    {
+        public static SnackbarManager Notifications { get; } = new SnackbarManager("SettingsHost", TimeSpan.FromSeconds(5));
+
+        [ObservableProperty]
+        [NotifyCanExecuteChangedFor(nameof(TryConnectProxyCommand))]
+        public partial bool IsActived { get; private set; }
+
+        [ObservableProperty]
+        public partial SettingsService SettingsServiceClone { get; private set; }
+
+        [ObservableProperty]
+        public partial string[] Formats { get; private set; } = { "mp4" };
+
+        [ObservableProperty]
+        public partial ProxyService ProxyInfo { get; set; }
+
+        [ObservableProperty]
+        public partial bool IsDarkMode { get; set; }
+
+        [RelayCommand]
+        private void Initialize()
+        {
+            Debug.WriteLine("Initialize");
+            SettingsServiceClone = settingService.Clone<SettingsService>();
+            ProxyInfo = SettingsServiceClone.ProxyInfo.Clone();
+            IsDarkMode = SettingsServiceClone.IsDarkMode;
+        }
+
+        [RelayCommand]
+        private void ToggleDarkMode()
+        {
+            IsDarkMode = !IsDarkMode;
+            SettingsServiceClone.IsDarkMode = IsDarkMode;
+            App.ApplyTheme(IsDarkMode);
+        }
+
+        [RelayCommand]
+        private void SubmitSettingInfo(SettingsService obj)
+        {
+            try
+            {
+                if (SettingsServiceClone.ProxyInfo != ProxyInfo)
+                {
+                    SettingsServiceClone.ProxyInfo = ProxyInfo.Clone();
+                }
+                settingService.CopyFrom(obj);
+                Notifications.Info("设置已经保存！！！");
+                settingService.Save();
+            }
+            catch (Exception e)
+            {
+                Notifications.Info($"提交失败,错误信息:{e.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void ResetSettingInfo()
+        {
+            SettingsServiceClone = settingService.Clone<SettingsService>();
+            Notifications.Info("设置已经重置！");
+        }
+
+        private bool CanTryConnectProxy => !IsActived;
+
+        [RelayCommand(CanExecute = nameof(CanTryConnectProxy))]
+        private async Task TryConnectProxy(ProxyService proxy)
+        {
+            if (string.IsNullOrWhiteSpace(proxy.Address))
+            {
+                Notifications.Info("请输入代理地址后,再次点击");
+                return;
+            }
+
+            IsActived = true;
+            try
+            {
+                var webproxy = new WebProxy(proxy.Address);
+                if (!string.IsNullOrWhiteSpace(proxy.UserName))
+                    webproxy.Credentials = new NetworkCredential(proxy.UserName, proxy.PassWord);
+
+                using HttpClientHandler clientHandler = new()
+                {
+                    Proxy = webproxy
+                };
+                using HttpClient httpclient = new(clientHandler)
+                {
+                    Timeout = TimeSpan.FromSeconds(5)
+                };
+
+                var statu = await httpclient.GetConnectStatus(new Uri("https://www.google.com"));
+
+                Notifications.Info(statu ? "测试成功,代理正常" : "测试失败,代理不可用");
+            }
+            catch (Exception e)
+            {
+                Notifications.Info($"连接失败,{e.Message}");
+            }
+            finally
+            {
+                IsActived = false;
+            }
+        }
+    }
+}

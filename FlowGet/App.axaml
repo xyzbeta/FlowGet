@@ -1,0 +1,104 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="FlowGet.App"
+             xmlns:dialogHostAvalonia="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:materialStyles="clr-namespace:Material.Styles.Themes;assembly=Material.Styles"
+             xmlns:assists="clr-namespace:Material.Styles.Assists;assembly=Material.Styles"
+             xmlns:local="using:FlowGet"
+             Name="FlowGet"
+             RequestedThemeVariant="Default">
+
+    <Application.Styles>
+        <materialStyles:MaterialTheme BaseTheme="Inherit" PrimaryColor="Blue" SecondaryColor="LightBlue" />
+        <materialIcons:MaterialIconStyles />
+        <dialogHostAvalonia:DialogHostStyles />
+
+        <Style Selector="TabControl">
+            <Style Selector="^[TabStripPlacement=Top] /template/ Rectangle#PART_Separator">
+                <Setter Property="IsVisible" Value="False" />
+            </Style>
+        </Style>
+
+        <Style Selector="TextBlock.MyTextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Width" Value="90" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Margin" Value="5" />
+        </Style>
+
+        <Style Selector="TextBox.universal">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Application.Styles>
+
+    <Application.Resources>
+
+        <Color x:Key="SuccessColor">#2E7D32</Color>
+        <Color x:Key="CanceledColor">#E65100</Color>
+        <Color x:Key="FailedColor">#C62828</Color>
+
+        <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
+        <SolidColorBrush x:Key="CanceledBrush" Color="{DynamicResource CanceledColor}" />
+        <SolidColorBrush x:Key="FailedBrush" Color="{DynamicResource FailedColor}" />
+
+        <!-- 侧边栏导航样式 -->
+        <ControlTheme x:Key="SidebarNavStyle" TargetType="{x:Type RadioButton}">
+            <Setter Property="GroupName" Value="navGroup" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#CBD5E1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RadioButton}">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Padding="{TemplateBinding Padding}"
+                                Height="{TemplateBinding Height}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Content="{TemplateBinding Content}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style Selector="^:checked">
+                <Setter Property="Background" Value="#2563EB" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style Selector="^:pointerover">
+                <Setter Property="Background" Value="#1E40AF" />
+                <Setter Property="Cursor" Value="Hand" />
+            </Style>
+            <Style Selector="^:checked:pointerover">
+                <Setter Property="Background" Value="#2563EB" />
+            </Style>
+        </ControlTheme>
+
+        <!-- 紧凑文本框 -->
+        <ControlTheme
+                x:Key="CompactTextBox"
+                BasedOn="{StaticResource {x:Type TextBox}}"
+                TargetType="{x:Type TextBox}">
+            <Styles>
+                <Style Selector="TextBox">
+                    <Setter Property="Height" Value="25" />
+                    <Style Selector="^ /template/ Panel#PART_TextFieldPanel">
+                        <Setter Property="MinHeight" Value="0" />
+                    </Style>
+                    <Style Selector="^ /template/ Panel#PART_TextContainer">
+                        <Setter Property="Margin" Value="0" />
+                    </Style>
+                </Style>
+            </Styles>
+        </ControlTheme>
+
+    </Application.Resources>
+</Application>

@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="220"
+             xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:windows="using:FlowGet.ViewModels.Windows"
+             xmlns:behavior="using:FlowGet.Behaviors"
+             x:DataType="windows:M3u8WindowViewModel"
+             x:Class="FlowGet.Views.Windows.M3u8WindowView">
+
+    <Border CornerRadius="8" Padding="20,16"
+            Background="{DynamicResource MaterialCardBackgroundBrush}">
+        <Grid ColumnDefinitions="*,auto" Name="videoDownloadInfoGrid"
+              DataContext="{Binding VideoDownloadInfo}">
+            <StackPanel Spacing="10">
+                <!-- URL 输入 -->
+                <TextBox Text="{Binding RequestUrl, Delay=150}"
+                         Classes="outlined"
+                         PlaceholderText="M3U8 下载地址 (支持拖拽 .m3u8 / .json / .txt 文件)"
+                         FontSize="14" VerticalAlignment="Center">
+                    <Interaction.Behaviors>
+                        <behavior:DragAndDropBehavior IsFile="True"
+                            FilterString=".m3u8|.txt|.json" />
+                    </Interaction.Behaviors>
+                </TextBox>
+
+                <!-- 视频名称 -->
+                <TextBox Text="{Binding VideoName, Delay=150}"
+                         Classes="outlined"
+                         PlaceholderText="视频名称 (可选，默认为随机名称)"
+                         FontSize="14" VerticalAlignment="Center" />
+
+                <!-- 加密设置行 -->
+                <Grid ColumnDefinitions="auto,*,*" Height="42">
+                    <ComboBox Grid.Column="0" Width="110"
+                              SelectedValue="{Binding Method}"
+                              ItemsSource="{Binding MethodArr}"
+                              FontSize="14">
+                        <ComboBox.Styles>
+                            <Style Selector="ComboBox /template/ Panel#PART_RootPanel > Grid">
+                                <Setter Property="VerticalAlignment" Value="Bottom" />
+                            </Style>
+                        </ComboBox.Styles>
+                    </ComboBox>
+                    <TextBox Grid.Column="1" Margin="8,0,0,0"
+                             Classes="outlined"
+                             Text="{Binding Key}" FontSize="14"
+                             PlaceholderText="KEY (字符串或 base64)" />
+                    <TextBox Grid.Column="2" Margin="8,0,0,0"
+                             Classes="outlined"
+                             Text="{Binding Iv}" FontSize="14"
+                             PlaceholderText="IV" />
+                </Grid>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" Spacing="8">
+                <Button Command="{Binding $parent[UserControl].((windows:M3u8WindowViewModel)DataContext).ProcessM3u8DownloadCommand}"
+                        CommandParameter="{Binding}"
+                        Classes="primary"
+                        Width="140" Height="44"
+                        HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <avalonia:MaterialIcon Kind="Download" Width="20" Height="20" />
+                        <TextBlock Text="开始下载" FontSize="14" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <!-- 批量导入 -->
+                <Separator Width="120" Opacity="0.2" />
+                <Button Command="{Binding $parent[UserControl].((windows:M3u8WindowViewModel)DataContext).ImportFromFileCommand}"
+                        Theme="{StaticResource MaterialFlatButton}"
+                        Width="140" Height="32"
+                        HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <avalonia:MaterialIcon Kind="FileUpload" Width="16" Height="16" />
+                        <TextBlock Text="从文件导入" FontSize="12" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

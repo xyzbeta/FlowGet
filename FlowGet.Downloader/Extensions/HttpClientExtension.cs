@@ -1,0 +1,35 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
+using FlowGet.Common.Extensions;
+
+namespace FlowGet.Downloader.Extensions
+{
+    internal static class HttpClientExtension
+    {
+        public static async Task<Stream> GetResponseContentAsync(this HttpClient httpClient, HttpRequestMessage httpRequestMessage, CancellationToken cancellationToken = default )
+        { 
+            HttpResponseMessage response = await httpClient.SendAsync(httpRequestMessage, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadAsStreamAsync(cancellationToken);
+        }
+
+        public static async Task<Stream> GetResponseContentAsync(this HttpClient httpClient, Uri uri, IEnumerable<KeyValuePair<string, string>>? headers, RangeHeaderValue? rangeHeaderValue, CancellationToken cancellationToken = default)
+        {
+            using HttpRequestMessage httpRequest = new(HttpMethod.Get, uri);
+            httpRequest.AddHeaders(headers);
+            if(rangeHeaderValue != null)
+            {
+                httpRequest.Headers.Range = rangeHeaderValue;
+            }
+
+            return await httpClient.GetResponseContentAsync(httpRequest, cancellationToken);
+        }
+    }
+}
