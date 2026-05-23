@@ -179,15 +179,23 @@ async function handleMessage(msg, sender) {
         case 'deleteStream': {
             const all = await getStreams();
             const list = all[`tab_${msg.tabId}`] || [];
+            const target = list.find(s => s.id === msg.streamId);
             all[`tab_${msg.tabId}`] = list.filter(s => s.id !== msg.streamId);
             await chrome.storage.local.set({ streams: all });
+            // 同步清理发送历史，允许重新发送
+            if (target) await removeFromSentHistory(target.url);
             if (msg.tabId != null) await updateBadge(msg.tabId);
             return { success: true };
         }
         case 'clear': {
             const all = await getStreams();
-            delete all[`tab_${msg.tabId}`];
+            const key = `tab_${msg.tabId}`;
+            const list = all[key] || [];
+            // 同步清理所有发送历史，允许重新发送
+            for (const s of list) await removeFromSentHistory(s.url);
+            delete all[key];
             await chrome.storage.local.set({ streams: all });
+            if (msg.tabId != null) await updateBadge(msg.tabId);
             return { success: true };
         }
         case 'checkUrl': return checkSentHistory(msg.url);
@@ -235,6 +243,14 @@ async function analyzeM3u8(tabId, streamId, url) {
 async function getSentHistory() {
     const r = await chrome.storage.local.get('sentHistory');
     return r.sentHistory || [];
+}
+
+async function removeFromSentHistory(url) {
+    const hist = await getSentHistory();
+    const filtered = hist.filter(h => h.url !== url);
+    if (filtered.length !== hist.length) {
+        await chrome.storage.local.set({ sentHistory: filtered });
+    }
 }
 
 async function addToSentHistory(url, filename) {
