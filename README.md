@@ -27,6 +27,22 @@ M3U8/HLS 视频流下载工具，跨平台桌面应用（Windows / macOS / Linux
 - 插件系统，支持个性化下载需求定制
 - 配套 Chrome 扩展，一键嗅探网页 M3U8 资源
 
+## 截图
+
+### 基本功能
+![基本功能](images/基本功能.png)
+
+### 设置页面
+![设置页面](images/设置页面.png)
+
+### 扩展模块
+![扩展模块](images/扩展模块.png)
+
+### Chrome 扩展
+| 弹出窗口 | 配置页面 |
+|:--:|:--:|
+| ![Chrome 扩展主页](images/chrome扩展主页.png) | ![Chrome 扩展配置页](images/chrome扩展配置页.png) |
+
 ## 构建
 
 需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。
