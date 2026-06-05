@@ -26,6 +26,16 @@ M3U8/HLS 视频流下载工具，跨平台桌面应用（Windows / macOS / Linux
 - 内嵌 HTTP REST API，支持任意语言调用
 - 插件系统，支持个性化下载需求定制
 - 配套 Chrome 扩展，一键嗅探网页 M3U8 资源
+- Chrome 扩展支持自定义修改嗅探资源名称
+- REST API 纯托管实现，跨平台零配置启动（无需管理员权限）
+
+## 更新日志
+
+### v1.1.0
+
+- **REST API**: `HttpListener` 替换为 `EmbedIO`，Windows 用户不再需要运行 `Add-PortAcl.ps1`，开箱即用
+- **Chrome 扩展**: 嗅探到的资源名称支持点击编辑，修改后发送到桌面端下载
+- **发布优化**: 自动清理平台无关文件，减小发布包体积
 
 ## 截图
 
