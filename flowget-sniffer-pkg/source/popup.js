@@ -174,7 +174,7 @@ async function buildCard(stream) {
 
     card.innerHTML = `
         <div class="stream-name" title="${esc(stream.url)}">
-            ${esc(name)}${typeTag}
+            <span class="name-text" data-id="${stream.id}" title="点击修改名称">${esc(name)}</span>${typeTag}
             <button class="card-del" data-id="${stream.id}" title="删除此条">&#10005;</button>
         </div>
         <div class="stream-url">${esc(urlDisplay)}</div>
@@ -190,6 +190,13 @@ async function buildCard(stream) {
     if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); onDelete(stream); });
     const sendBtn = card.querySelector('.btn-send, .btn-retry');
     if (sendBtn) sendBtn.addEventListener('click', () => onSend(stream));
+    const nameSpan = card.querySelector('.name-text');
+    if (nameSpan) {
+        nameSpan.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startInlineEdit(nameSpan, stream);
+        });
+    }
     return card;
 }
 
@@ -198,6 +205,14 @@ function actionBtn(s) {
     if (s.status === 'error') return '<button class="btn-retry">&#8635; 重试</button>';
     if (s.status === 'sending') return '<button class="btn-send" disabled>发送中...</button>';
     return '';
+}
+
+async function onRename(stream, newName) {
+    const trimmed = (newName || '').trim();
+    if (!trimmed || trimmed === (stream.filename || '未命名')) return;
+    await chrome.runtime.sendMessage({ type: 'updateStreamName', tabId: currentTabId, streamId: stream.id, filename: trimmed });
+    stream.filename = trimmed;
+    refreshList();
 }
 
 async function onSend(stream) {
@@ -408,3 +423,35 @@ function esc(s) {
     d.textContent = String(s);
     return d.innerHTML;
 }
+function startInlineEdit(span, stream) {
+    const oldName = stream.filename || '未命名';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'name-edit-input';
+    input.value = oldName;
+    input.setSelectionRange(0, oldName.length);
+    input.addEventListener('blur', () => finishEdit(input, span, stream, oldName));
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+        if (e.key === 'Escape') { input.value = oldName; input.blur(); }
+    });
+    span.replaceWith(input);
+    input.focus();
+    input.select();
+}
+
+function finishEdit(input, span, stream, oldName) {
+    const newName = input.value.trim() || oldName;
+    const newSpan = document.createElement('span');
+    newSpan.className = 'name-text';
+    newSpan.setAttribute('data-id', stream.id);
+    newSpan.setAttribute('title', '点击修改名称');
+    newSpan.textContent = newName;
+    newSpan.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startInlineEdit(newSpan, stream);
+    });
+    input.replaceWith(newSpan);
+    if (newName !== oldName) onRename(stream, newName);
+}
+

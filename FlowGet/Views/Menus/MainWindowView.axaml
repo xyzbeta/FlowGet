@@ -197,7 +197,7 @@
                            StringFormat='API: http://127.0.0.1:{0}'}" />
                 <TextBlock Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center"
                            FontSize="12" Foreground="{DynamicResource MaterialTextSecondaryBrush}"
-                           Text="{Binding HttpServicePort, TargetNullValue='请运行 Add-PortAcl 脚本',
+                           Text="{Binding HttpServicePort, TargetNullValue='端口不可用',
                            StringFormat='端口: {0}'}" />
             </Grid>
         </Border>

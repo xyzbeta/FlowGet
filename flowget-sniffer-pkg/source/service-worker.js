@@ -49,6 +49,16 @@ async function updateStreamMeta(tabId, streamId, meta) {
     }
 }
 
+async function updateStreamFilename(tabId, streamId, filename) {
+    const all = await getStreams();
+    const key = `tab_${tabId}`;
+    const item = (all[key] || []).find(s => s.id === streamId);
+    if (item) {
+        item.filename = filename;
+        await chrome.storage.local.set({ streams: all });
+    }
+}
+
 async function getSettings() {
     const r = await chrome.storage.local.get('settings');
     return r.settings || { port: 65432, savePath: '', paused: false, blocklist: [], headers: { cookie: true, referer: true, origin: true, userAgent: true, authorization: false } };
@@ -196,6 +206,10 @@ async function handleMessage(msg, sender) {
             delete all[key];
             await chrome.storage.local.set({ streams: all });
             if (msg.tabId != null) await updateBadge(msg.tabId);
+            return { success: true };
+        }
+        case 'updateStreamName': {
+            await updateStreamFilename(msg.tabId, msg.streamId, msg.filename);
             return { success: true };
         }
         case 'checkUrl': return checkSentHistory(msg.url);

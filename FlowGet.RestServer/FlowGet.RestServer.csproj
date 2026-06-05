@@ -15,6 +15,10 @@
 	</PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="EmbedIO" Version="3.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FlowGet.Common\FlowGet.Common.csproj" />
     <ProjectReference Include="..\FlowGet.M3U8\FlowGet.M3U8.csproj" />
   </ItemGroup>

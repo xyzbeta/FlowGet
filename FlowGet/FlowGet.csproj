@@ -119,11 +119,22 @@
 		<Message Text="FFmpeg 已准备: @(CopiedFFmpeg)" Importance="high" />
 	</Target>
 
-	<Target Name="Copy Files" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' != '' AND $(RuntimeIdentifier.StartsWith('win-'))">
-		<Message Text="Copy $(ProjectDir)Add-PortAcl.ps1" Importance="high" />
-		<Copy SourceFiles="$(ProjectDir)Add-PortAcl.ps1" DestinationFiles="$(PublishDir)Add-PortAcl.ps1" />
-	</Target>
 
+		<Target Name="CleanPublishOutput" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' != ''">
+			<ItemGroup>
+				<CleanFiles Include="$(PublishDir)Add-PortAcl.ps1" />
+				<CleanFiles Include="$(PublishDir)Avalonia.DesignerSupport.dll" />
+			</ItemGroup>
+			<ItemGroup Condition="$([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('win-'))">
+				<CleanFiles Include="$(PublishDir)Avalonia.Native.dll" />
+				<CleanFiles Include="$(PublishDir)Avalonia.FreeDesktop.dll" />
+				<CleanFiles Include="$(PublishDir)Avalonia.FreeDesktop.AtSpi.dll" />
+				<CleanFiles Include="$(PublishDir)Avalonia.X11.dll" />
+				<CleanFiles Include="$(PublishDir)Tmds.DBus.Protocol.dll" />
+			</ItemGroup>
+			<Delete Files="@(CleanFiles)" />
+			<Message Text="已清理平台无关文件" Importance="high" />
+		</Target>
 	<Target Name="PackMacOSApp" AfterTargets="Publish" Condition="'$(RuntimeIdentifier)' != '' AND $(RuntimeIdentifier.StartsWith('osx-'))">
 		
 		<PropertyGroup>

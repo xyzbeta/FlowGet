@@ -1,11 +1,11 @@
-﻿using FlowGet.Abstractions.Common;
+﻿using EmbedIO;
+using FlowGet.Abstractions.Common;
 using FlowGet.Abstractions.M3u8;
 using FlowGet.M3U8;
 using FlowGet.M3U8.Extensions;
 using FlowGet.RestServer.Extensions;
 using FlowGet.RestServer.Models;
 using FlowGet.RestServer.Utils;
-using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -44,6 +44,9 @@ namespace FlowGet.RestServer
         {
             for (int i = 65432; i > 65400; i--)
             {
+                if (!HttpListen.IsPortAvailable(i))
+                    continue;
+
                 try
                 {
                     httpListen.Run($"http://+:{i}/");
@@ -51,21 +54,21 @@ namespace FlowGet.RestServer
                     SetPortAction(i);
                     break;
                 }
-                catch (HttpListenerException)
+                catch (Exception)
                 {
                     continue;
                 }
             }
         }
 
-        private void DownloadMedias(HttpListenerRequest request, HttpListenerResponse response)
+        private async Task DownloadMedias(IHttpContext context)
         {
             try
             {
-                RequestWithMediaUri? requestWithMediaUri = JsonSerializer.Deserialize<RequestWithMediaUri>(request.InputStream, jsonSerializerOptions);
+                RequestWithMediaUri? requestWithMediaUri = await JsonSerializer.DeserializeAsync<RequestWithMediaUri>(context.OpenRequestStream(), jsonSerializerOptions);
                 if (requestWithMediaUri is null)
                 {
-                    response.Json(Response.Error("序列化失败"));
+                    await context.Response.SendJson(Response.Error("序列化失败"));
                     return;
                 }
 
@@ -76,22 +79,22 @@ namespace FlowGet.RestServer
                 LastRequestTime = DateTime.UtcNow;
                 RequestReceived?.Invoke(this, EventArgs.Empty);
 
-                response.Json(Response.Success());
+                await context.Response.SendJson(Response.Success());
             }
             catch (Exception e)
             {
-                response.Json(Response.Error($"请求失败,{e.Message}"));
+                await context.Response.SendJson(Response.Error($"请求失败,{e.Message}"));
             }
         }
 
-        private void DownloadByUrl(HttpListenerRequest request, HttpListenerResponse response)
+        private async Task DownloadByUrl(IHttpContext context)
         {
             try
             {
-                RequestWithURI? requestWithURI = JsonSerializer.Deserialize<RequestWithURI>(request.InputStream, jsonSerializerOptions);
+                RequestWithURI? requestWithURI = await JsonSerializer.DeserializeAsync<RequestWithURI>(context.OpenRequestStream(), jsonSerializerOptions);
                 if(requestWithURI is null)
                 {
-                    response.Json(Response.Error("序列化失败"));
+                    await context.Response.SendJson(Response.Error("序列化失败"));
                     return;
                 }
 
@@ -102,36 +105,36 @@ namespace FlowGet.RestServer
                 LastRequestTime = DateTime.UtcNow;
                 RequestReceived?.Invoke(this, EventArgs.Empty);
 
-                response.Json(Response.Success());
+                await context.Response.SendJson(Response.Success());
             }
             catch (Exception e)
             {
-                response.Json(Response.Error($"请求失败,{e.Message}"));
+                await context.Response.SendJson(Response.Error($"请求失败,{e.Message}"));
             }
         }
 
-        private void DownloadByContent(HttpListenerRequest request, HttpListenerResponse response)
+        private async Task DownloadByContent(IHttpContext context)
         {
             try
             {
-                RequestWithContent? requestWithContent = JsonSerializer.Deserialize<RequestWithContent>(request.InputStream, jsonSerializerOptions);
+                RequestWithContent? requestWithContent = await JsonSerializer.DeserializeAsync<RequestWithContent>(context.OpenRequestStream(), jsonSerializerOptions);
                 if (requestWithContent is null)
                 {
-                    response.Json(Response.Error("序列化失败"));
+                    await context.Response.SendJson(Response.Error("序列化失败"));
                     return;
                 }
 
 
-                IM3uFileInfo? m3UFileInfo = M3u8FileInfoClient.CreateM3uFileReader(request.Url!).GetM3u8FileInfo(requestWithContent.Content);
+                IM3uFileInfo? m3UFileInfo = M3u8FileInfoClient.CreateM3uFileReader(context.Request.Url!).GetM3u8FileInfo(requestWithContent.Content);
                 if (m3UFileInfo is null)
                 {
-                    response.Json(Response.Error("m3u8内容读取失败,请检查传入的参数是否有误"));
+                    await context.Response.SendJson(Response.Error("m3u8内容读取失败,请检查传入的参数是否有误"));
                     return;
                 }
 
                 if(m3UFileInfo!.MediaFiles is null || !m3UFileInfo.MediaFiles.Any())
                 {
-                    response.Json(Response.Error("m3u8的ts列表为空"));
+                    await context.Response.SendJson(Response.Error("m3u8的ts列表为空"));
                     return;
                 }
                 requestWithContent.Validate();
@@ -147,24 +150,24 @@ namespace FlowGet.RestServer
                 LastRequestTime = DateTime.UtcNow;
                 RequestReceived?.Invoke(this, EventArgs.Empty);
 
-                response.Json(Response.Success());
+                await context.Response.SendJson(Response.Success());
             }
             catch (Exception e)
             {
-                response.Json(Response.Error($"请求失败,{e.Message}"));
+                await context.Response.SendJson(Response.Error($"请求失败,{e.Message}"));
             }
 
         }
 
         //视频地址 必须是http开头 或者磁盘根路径
-        private void DownloadByJsonContent(HttpListenerRequest request, HttpListenerResponse response)
+        private async Task DownloadByJsonContent(IHttpContext context)
         {
             try
             {
-                RequestWithM3u8FileInfo? requestWithM3U8FileInfo = JsonSerializer.Deserialize<RequestWithM3u8FileInfo>(request.InputStream, jsonSerializerOptions);
+                RequestWithM3u8FileInfo? requestWithM3U8FileInfo = await JsonSerializer.DeserializeAsync<RequestWithM3u8FileInfo>(context.OpenRequestStream(), jsonSerializerOptions);
                 if (requestWithM3U8FileInfo is null)
                 {
-                    response.Json(Response.Error("序列化失败"));
+                    await context.Response.SendJson(Response.Error("序列化失败"));
                     return;
                 }
 
@@ -176,23 +179,23 @@ namespace FlowGet.RestServer
                 LastRequestTime = DateTime.UtcNow;
                 RequestReceived?.Invoke(this, EventArgs.Empty);
 
-                response.Json(Response.Success());
+                await context.Response.SendJson(Response.Success());
             }
             catch (Exception e)
             {
-                response.Json(Response.Error($"请求失败,{e.Message}"));
+                await context.Response.SendJson(Response.Error($"请求失败,{e.Message}"));
             }
         }
 
 
-        private void GetM3u8FileInfo(HttpListenerRequest request, HttpListenerResponse response)
+        private async Task GetM3u8FileInfo(IHttpContext context)
         {
             try
             {
-                RequestWithGetM3u8FileInfo? requestWIthGetM3U8FileInfo = JsonSerializer.Deserialize<RequestWithGetM3u8FileInfo>(request.InputStream, jsonSerializerOptions);
+                RequestWithGetM3u8FileInfo? requestWIthGetM3U8FileInfo = await JsonSerializer.DeserializeAsync<RequestWithGetM3u8FileInfo>(context.OpenRequestStream(), jsonSerializerOptions);
                 if (requestWIthGetM3U8FileInfo is null)
                 {
-                    response.Json(Response.Error("序列化失败"));
+                    await context.Response.SendJson(Response.Error("序列化失败"));
                     return;
                 }
 
@@ -201,11 +204,11 @@ namespace FlowGet.RestServer
                 Response<IM3uFileInfo> r = m3UFileInfo.MediaFiles != null && m3UFileInfo.MediaFiles.Any()
                                         ? new Response<IM3uFileInfo>(0, "解析成功", m3UFileInfo)
                                         : new Response<IM3uFileInfo>(1, "没有包含任何数据", null);
-                response.Json(r);
+                await context.Response.SendJson(r);
             }
             catch (Exception ex)
             {
-                response.Json(Response.Error($"解析失败,{ex.Message}"));
+                await context.Response.SendJson(Response.Error($"解析失败,{ex.Message}"));
             }
         }
     }
