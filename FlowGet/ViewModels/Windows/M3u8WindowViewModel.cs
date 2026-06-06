@@ -128,7 +128,8 @@ namespace FlowGet.ViewModels.Windows
         //处理软件界面来的请求
         public void ProcessM3u8Download(HttpClient? httpClient, IM3u8DownloadParam m3U8DownloadParam)
         {
-            FileEx.EnsureFileNotExist(m3U8DownloadParam.VideoFullName);
+            string uniquePath = FileEx.EnsureUniquePath(m3U8DownloadParam.VideoFullName);
+            m3U8DownloadParam.VideoName = Path.GetFileNameWithoutExtension(uniquePath);
 
             DownloadViewModel download = viewModelManager.CreateDownloadViewModel(httpClient, m3U8DownloadParam);
             if (download is null) return;
@@ -139,7 +140,8 @@ namespace FlowGet.ViewModels.Windows
         //处理接口过来的请求
         public void ProcessM3u8Download(HttpClient? httpClient, IDownloadParamBase m3U8DownloadParam, IM3uFileInfo m3UFileInfo)
         {
-            FileEx.EnsureFileNotExist(m3U8DownloadParam.VideoFullName);
+            string uniquePath = FileEx.EnsureUniquePath(m3U8DownloadParam.VideoFullName);
+            m3U8DownloadParam.VideoName = Path.GetFileNameWithoutExtension(uniquePath);
 
             DownloadViewModel download = viewModelManager.CreateDownloadViewModel(httpClient, m3UFileInfo, m3U8DownloadParam);
             if (download is null) return;

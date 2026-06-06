@@ -10,6 +10,7 @@ using FlowGet.Utils;
 using FlowGet.ViewModels.Downloads;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 
 namespace FlowGet.ViewModels.Windows
@@ -65,7 +66,8 @@ namespace FlowGet.ViewModels.Windows
 
         public void ProcessMediaDownload(HttpClient? httpClient, IMediaDownloadParam mediaDownloadParams)
         {
-            FileEx.EnsureFileNotExist(mediaDownloadParams.VideoFullName);
+            string uniquePath = FileEx.EnsureUniquePath(mediaDownloadParams.VideoFullName);
+            mediaDownloadParams.VideoName = Path.GetFileNameWithoutExtension(uniquePath);
 
             DownloadViewModel download = viewModelManager.CreateDownloadViewModel(httpClient,mediaDownloadParams);
             if (download is null) return;

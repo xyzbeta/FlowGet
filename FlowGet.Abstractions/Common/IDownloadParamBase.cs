@@ -12,7 +12,7 @@ namespace FlowGet.Abstractions.Common
 
         //没有扩展名的名称
         //例如index
-        string VideoName { get;  }
+        string VideoName { get; set; }
 
         //包含完整路径的名称且带有后缀
         //例如:e:/desktop/download/index.mp4
